@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cctype>
 #include <charconv>
+#include <execution>
 
 S11Parser::ParseResult S11Parser::parseFile(const std::string& filePath, Measurement& measurement) {
     auto result = parseFileExpected(filePath);
@@ -16,7 +17,14 @@ S11Parser::ParseExpected S11Parser::parseFileExpected(const std::filesystem::pat
     if (!std::filesystem::exists(filePath)) {
         return ParseResult::FileNotFound;
     }
-
+    
+    const auto fileSize = std::filesystem::file_size(filePath);
+    constexpr size_t parallelThreshold = 1024 * 1024; // 1mb
+    
+    if (fileSize > parallelThreshold) {
+        return parseFileParallel(filePath);
+    }
+    
     std::ifstream file(filePath);
     if (!file.is_open()) {
         return ParseResult::FileNotFound;
@@ -26,8 +34,6 @@ S11Parser::ParseExpected S11Parser::parseFileExpected(const std::filesystem::pat
     std::string line;
     bool headerFound = false;
     
-    const auto fileSize = std::filesystem::file_size(filePath);
-
     const size_t estimatedLines = fileSize / 50;
     measurement.reserve(estimatedLines);
     
@@ -65,6 +71,71 @@ S11Parser::ParseExpected S11Parser::parseFileExpected(const std::filesystem::pat
     return measurement;
 }
 
+S11Parser::ParseExpected S11Parser::parseFileParallel(const std::filesystem::path& filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        return ParseResult::FileNotFound;
+    }
+    
+    std::string content((std::istreambuf_iterator<char>(file)),
+                       std::istreambuf_iterator<char>());
+    
+    std::vector<std::string_view> lineVector;
+    size_t start = 0;
+    for (size_t i = 0; i <= content.size(); ++i) {
+        if (i == content.size() || content[i] == '\n') {
+            if (i > start) {
+                lineVector.emplace_back(content.data() + start, i - start);
+            }
+            start = i + 1;
+        }
+    }
+    
+    std::vector<std::optional<FrequencyPoint>> points(lineVector.size());
+    bool headerFound = false;
+    
+    const size_t headerCheckLimit = std::min(lineVector.size(), size_t(10));
+    for (size_t i = 0; i < headerCheckLimit; ++i) {
+        const auto trimmedLine = trim(lineVector[i]);
+        if (!trimmedLine.empty() && trimmedLine[0] == '#') {
+            if (isValidHeader(trimmedLine)) {
+                headerFound = true;
+                break;
+            }
+        }
+    }
+    
+    std::transform(
+        std::execution::par_unseq,
+        lineVector.begin(), lineVector.end(),
+        points.begin(),
+        [](std::string_view line) -> std::optional<FrequencyPoint> {
+            const auto trimmedLine = trim(line);
+            if (trimmedLine.empty() || trimmedLine[0] == '#' || trimmedLine[0] == '!') {
+                return std::nullopt;
+            }
+            return parseDataLine(trimmedLine);
+        }
+    );
+    
+    Measurement measurement;
+    for (const auto& point : points) {
+        if (point) {
+            measurement.addPoint(point->frequency, point->s11);
+        }
+    }
+    
+    if (measurement.empty()) {
+        return ParseResult::EmptyFile;
+    }
+    
+    if (!headerFound) {
+        return ParseResult::InvalidFormat;
+    }
+    
+    return measurement;
+}
+
 bool S11Parser::isValidHeader(std::string_view line) noexcept {
     //# Hz S RI R 50
     const auto tokens = split(line, ' ');
@@ -83,6 +154,7 @@ bool S11Parser::isValidHeader(std::string_view line) noexcept {
 std::optional<FrequencyPoint> S11Parser::parseDataLine(std::string_view line) noexcept {
     const auto tokens = split(line, ' ');
     
+    // freq r i
     if (tokens.size() < 3) {
         return std::nullopt;
     }

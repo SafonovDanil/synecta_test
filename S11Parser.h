@@ -26,5 +26,5 @@ private:
     static std::optional<FrequencyPoint> parseDataLine(std::string_view line) noexcept;
     static std::vector<std::string_view> split(std::string_view str, char delimiter) noexcept;
     static constexpr std::string_view trim(std::string_view str) noexcept;
-    
+    static ParseExpected parseFileParallel(const std::filesystem::path& filePath);
 };

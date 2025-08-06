@@ -22,6 +22,7 @@ set(HEADERS
     S11Parser.h
     GraphRenderer.h
     GraphWidget.h
+    PerformanceUtils.h
 )
 
 qt_add_executable(TouchstoneViewer ${SOURCES} ${HEADERS})

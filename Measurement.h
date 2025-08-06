@@ -4,7 +4,6 @@
 #include <complex>
 #include <span>
 #include <ranges>
-#include <concepts>
 
 struct FrequencyPoint {
     double frequency;
@@ -16,11 +15,11 @@ struct FrequencyPoint {
         : frequency(freq), s11(s11_val) {}
 };
 
+// Контейнер в STL стиле
 class Measurement {
 public:
     std::vector<FrequencyPoint> data;
     
-    // Template function with static_assert for type safety
     template<typename T>
     void addPoint(T frequency, std::complex<T> s11) {
         static_assert(std::is_floating_point_v<T>, "T must be floating point type");
