@@ -2,7 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QtQml>
-#include <QDebug>
+#include <qDebug>
 #include "Backend.h"
 #include "GraphWidget.h"
 
@@ -15,11 +15,11 @@ int main(int argc, char *argv[])
       
     QQmlApplicationEngine engine;
     
-    QUrl url(QStringLiteral("qrc:/Main.qml"));
+    QUrl url(QStringLiteral("qrc:/qml/Main.qml"));
     engine.load(url);
     
     if (engine.rootObjects().isEmpty()) {
-        url = QUrl::fromLocalFile("../Main.qml");
+        url = QUrl::fromLocalFile("../qml/Main.qml");
         engine.load(url);
     }
     

@@ -15,7 +15,7 @@ GraphWidget::GraphWidget(QQuickItem *parent)
 }
 
 void GraphWidget::paint(QPainter *painter) {
-    PERF_MEASURE("GraphWidget::paint");
+    //PERF_MEASURE("GraphWidget::paint");
     
     const int width = static_cast<int>(this->width());
     const int height = static_cast<int>(this->height());

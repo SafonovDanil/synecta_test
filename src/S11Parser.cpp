@@ -155,7 +155,7 @@ std::optional<FrequencyPoint> S11Parser::parseDataLine(std::string_view line) no
     const auto tokens = split(line, ' ');
     
     // freq r i
-    if (tokens.size() < 3) {
+    if (tokens.size() != 3) {
         return std::nullopt;
     }
     

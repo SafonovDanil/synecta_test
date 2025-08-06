@@ -2,7 +2,7 @@
 #include "GraphWidget.h"
 #include <QUrl>
 #include <QFutureWatcher>
-#include <QDebug>
+#include <qDebug>
 #include <tuple>
 
 static std::tuple<S11Parser::ParseResult, Measurement, QString> parseFileAsync(const QString& filePath) {
@@ -72,6 +72,12 @@ void Backend::loadFile(const QUrl& fileUrl) {
             });
     
     watcher->setFuture(future);
+
+    {
+        std::unique_lock lock(m_dataMutex);
+        m_zoomParams.isActive = false;
+    }
+    emit isZoomedChanged();
 }
 
 void Backend::clearData() {
@@ -126,7 +132,7 @@ void Backend::zoomToRegion(double freqMin, double freqMax, double magMin, double
     if (freqMin >= freqMax || magMin >= magMax || 
         freqMin < 0 || freqMax < 0 || 
         std::isnan(freqMin) || std::isnan(freqMax) || std::isnan(magMin) || std::isnan(magMax)) {
-        qDebug() << "Invalid zoom parameters - ignoring";
+        //qDebug() << "Invalid zoom parameters - ignoring";
         return;
     }
     
@@ -138,7 +144,7 @@ void Backend::zoomToRegion(double freqMin, double freqMax, double magMin, double
     m_zoomParams.magMax = magMax;
     m_zoomParams.isActive = true;
     
-    qDebug() << "Setting zoom to: freq(" << freqMin << "-" << freqMax << ") mag(" << magMin << "-" << magMax << ")";
+    //qDebug() << "Setting zoom to: freq(" << freqMin << "-" << freqMax << ") mag(" << magMin << "-" << magMax << ")";
     
     if (!wasZoomed) {
         emit isZoomedChanged();
@@ -159,7 +165,7 @@ void Backend::resetZoom() {
     m_zoomParams.magMin = 0.0;
     m_zoomParams.magMax = 0.0;
     
-    qDebug() << "Zoom reset";
+    //qDebug() << "Zoom reset";
     
     if (wasZoomed) {
         emit isZoomedChanged();
@@ -206,15 +212,15 @@ void Backend::zoomToPixelRegion(int x1, int y1, int x2, int y2, int imageWidth, 
     const double clampedMagMin = std::clamp(magMin, originalBounds.minMag, originalBounds.maxMag);
     const double clampedMagMax = std::clamp(magMax, originalBounds.minMag, originalBounds.maxMag);
     
-    qDebug() << "Zoom selection: pixels(" << x1 << "," << y1 << "," << x2 << "," << y2 << ") size(" << imageWidth << "x" << imageHeight << ")";
-    qDebug() << "Current bounds: freq(" << currentBounds.minFreq << "-" << currentBounds.maxFreq << ") mag(" << currentBounds.minMag << "-" << currentBounds.maxMag << ")";
-    qDebug() << "Calculated zoom: freq(" << clampedFreqMin << "-" << clampedFreqMax << ") mag(" << clampedMagMin << "-" << clampedMagMax << ")";
+    //qDebug() << "Zoom selection: pixels(" << x1 << "," << y1 << "," << x2 << "," << y2 << ") size(" << imageWidth << "x" << imageHeight << ")";
+    //qDebug() << "Current bounds: freq(" << currentBounds.minFreq << "-" << currentBounds.maxFreq << ") mag(" << currentBounds.minMag << "-" << currentBounds.maxMag << ")";
+    //qDebug() << "Calculated zoom: freq(" << clampedFreqMin << "-" << clampedFreqMax << ") mag(" << clampedMagMin << "-" << clampedMagMax << ")";
     
     if (clampedFreqMax > clampedFreqMin && clampedMagMax > clampedMagMin) {
         lock.unlock();
         zoomToRegion(clampedFreqMin, clampedFreqMax, clampedMagMin, clampedMagMax);
     } else {
-        qDebug() << "Invalid zoom region - skipping";
+        //qDebug() << "Invalid zoom region - skipping";
     }
 }
 
