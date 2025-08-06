@@ -21,16 +21,29 @@
 ## Структура проекта
 
 .
-├── src/                            # 
+
+├── src/                            
+
 │   ├── main.cpp                    # Точка входа в приложение
+
 │   ├── Backend.cpp / Backend.h     # Backend-класс, взаимодействующий с QML
+
 │   ├── GraphWidget.cpp / .h        # Отрисовка графика
+
 │   ├── GraphRenderer.cpp / .h      # Подсчет значений, границ для графика
+
 │   ├── S11Parser.cpp / .h          # Парсер .s1p файлов
+
 │   ├── Measurement.h               # Контейнеры для измерений
+
 │   └── PerformanceUtils.h          # Утилита для замера производительности
+
 │
+
 ├── qml/
+
 │   └── Main.qml                    # Интерфейс главного окна
+
 │
+
 ├── CMakeLists.txt                  # Скрипт сборки проекта CMake
